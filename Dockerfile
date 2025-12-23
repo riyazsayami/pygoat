@@ -1,33 +1,37 @@
-FROM python:3.11.0b1-buster
+# Use maintained base image (Debian 12 Bookworm)
+FROM python:3.11-slim-bookworm
 
-
-# set work directory
+# Set working directory
 WORKDIR /app
 
+# Prevent Python writing .pyc files and buffer logs
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# dependencies for psycopg2
-RUN apt-get update && apt-get install --no-install-recommends -y dnsutils=1:9.11.5.P4+dfsg-5.1+deb10u11 libpq-dev=11.16-0+deb10u1 python3-dev=3.7.3-1 && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install system dependencies needed for psycopg2 and DNS tools
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    # DNS utilities (dig/nslookup)
+    dnsutils \
+ && rm -rf /var/lib/apt/lists/*
 
+# Copy dependency files
+COPY requirements.txt .
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Install Python dependencies
+RUN python -m pip install --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
 
+# Copy entire application source
+COPY . .
 
-# Install dependencies
-RUN python -m pip install --no-cache-dir pip==22.0.4
-COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Apply database migrations
+RUN python manage.py migrate
 
-
-# copy project
-COPY . /app/
-
-
-# install pygoat
+# Expose Django default port
 EXPOSE 8000
 
-
-RUN python3 /app/manage.py migrate
-WORKDIR /app
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers","6", "pygoat.wsgi"]
+# Run the app
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
