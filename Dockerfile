@@ -26,7 +26,6 @@ RUN python -m pip install --upgrade pip \
 
 # Copy entire application source
 COPY . .
-
 # Apply database migrations
 RUN python manage.py migrate
 
