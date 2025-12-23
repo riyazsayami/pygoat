@@ -1,0 +1,41 @@
+name: Docker Scout Scan
+
+on:
+  workflow_dispatch:
+
+jobs:
+  docker-scout:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t pygoat:latest .
+
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.REPO_USER }}
+          password: ${{ secrets.REPO_PWD }}
+
+      # Docker Scout Quickview
+      - name: Docker Scout Quickview
+        uses: docker/scout-action@v1
+        with:
+          command: quickview
+          image: pygoat:latest
+
+      # Docker Scout CVE scan
+      - name: Docker Scout CVE Scan
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: pygoat:latest
