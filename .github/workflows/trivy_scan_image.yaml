@@ -34,8 +34,7 @@ jobs:
       - name: Run Trivy IaC scan
         uses: aquasecurity/trivy-action@0.20.0
         with:
-          scan-type: "image"
-          scan-ref: "pygoat.latest"
+          image-ref: "pygoat.latest"
           severity: ${{ inputs.severity }}
           format: "table"
           exit-code: "0"
