@@ -1,0 +1,45 @@
+name: Trivy IaC Scan (CloudFormation)
+
+on:
+  workflow_dispatch:
+    inputs:
+      severity:
+        description: "Choose Severity Level"
+        required: true
+        default: "CRITICAL,HIGH,MEDIUM"
+        type: choice
+        options:
+          - CRITICAL
+          - HIGH
+          - MEDIUM
+          - "CRITICAL,HIGH"
+          - "MEDIUM, HIGH"
+          - "CRITICAL, MEDIUM"
+  push:
+    branches: [ "main" ]
+
+jobs:
+  trivy-iac-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+     
+      # Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t pygoat:latest .
+
+      - name: Run Trivy IaC scan
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: "image"
+          scan-ref: "pygoat.latest"
+          severity: ${{ inputs.severity }}
+          format: "table"
+          exit-code: "0"
+        env:
+        TRIVY_SKIP_DB_UPDATE: true
+        TRIVY_SKIP_JAVA_DB_UPDATE: true
+
